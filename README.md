@@ -26,7 +26,7 @@ localhost:4000/register
 - **<code>String</code> username**
 - **<code>String</code> password**
 - **<code>JSON</code> interests** - see example below
-```json
+```
 {
   interest1: interest1_data,
   interest2: interest2_data
@@ -50,7 +50,7 @@ localhost:4000/sprints
 
 ###### Return Format
 - **<code>JSON</code> sprints** - See example below
-```json
+```
 {
   sprints: [
     {
@@ -89,7 +89,7 @@ localhost:4000/eventAutoCorrect
 
 ###### Return Format
 - **<code>JSON</code> result** - JSON of array of strings  - See example below
-```json
+```
 {
   result: [
     "didyoumeanthis",
@@ -111,7 +111,7 @@ localhost:4000/event
 
 ###### Return Format
 - **<code>JSON</code> event** - See example below
-```json
+```
 {
   name: event_name,
   type: "public" or "private",
