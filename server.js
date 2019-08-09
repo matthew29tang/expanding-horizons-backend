@@ -1,6 +1,6 @@
 var port = process.env.PORT || 4000; //sets local server port to 4000
 var express = require('express'); // Express web server framework
-//var request = require('request');
+var md5 = require('md5');
 
 const admin = require('firebase-admin');
 let serviceAccount = require('./credentials.json');
@@ -26,7 +26,7 @@ setInterval(function() {
   Document: Key - How you will access this data later. Usually username
   Data: Value - JSON object of data you want to store
 */
-function writeData(collection, document, data) {
+function writeData(collection, document, data, db) {
   try {
     db.collection(collection).doc(document).set(data);
     return 0;
@@ -34,6 +34,8 @@ function writeData(collection, document, data) {
     return -1;
   }
 }
+
+
 
 /*
   Collection: Collection of Key/Value pairs
@@ -45,7 +47,8 @@ function readData(collection, document, cb, req, res) {
     cb(req, res, doc.data())
   ).catch(err => {
     console.log("uh oh" + err)
-    cb(req, res, undefined)});
+    cb(req, res, undefined)
+  });
 }
 
 app.get('/login', function (req, res) {
@@ -65,37 +68,87 @@ app.get('/register', function (req, res) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   const username = req.query.username;
-  readData('users', username, registerUser, req, res);
+  readData('users', username, _registerUser, req, res);
 });
 
 // registers users (async)
-function registerUser(req, res, username) {
+function _registerUser(req, res, username) {
   if (username) {
     res.send(false);
     return 0;
   }
   data = {
-    "username": req.query.username, 
-    "password": req.query.password,
-    "event_type": req.query.event_type, 
-    "money_req": Number(req.query.money_req),
-    "event_size": Number(req.query.event_size),
-    "zip_code": Number(req.query.zipCode)
+    username: req.query.username,
+    password: req.query.password,
+    event_type: req.query.event_type,
+    money_req: Number(req.query.money_req),
+    event_size: Number(req.query.event_size),
+    zip_code: Number(req.query.zipCode),
   }
   success = writeData("users", req.query.username, data);
   res.send(success === 0);
   return 0;
 }
 
-
-app.get('/sprints', function (req, res) {
-  user = req.query.username;
+app.get('/addEvent', function (req, res) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  readData('events', req.query.name, _createEvent, req, res);
 });
 
+// registers users (async)
+function _createEvent(req, res, name) {
+  if (name) {
+    res.send(false);
+    return 0;
+  }
+  data = {
+    name: req.query.name,
+    type: req.query.type,
+    date: req.query.date,
+    location: req.query.location,
+    description: req.query.description,
+    picture: req.query.picture,
+    money: Number(req.query.money),
+    capacity: Number(req.query.capacity),
+    numPeople: Number(req.query.numPeople),
+  }
+  success = writeData("events", req.query.name, data);
+  res.send(success === 0);
+  return 0;
+}
+
+app.get('/joinEvent', function (req, res) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  db.collection("events").doc(req.query.eventName).collection("people").doc(req.query.username).set({
+      username: req.query.username
+  }).then(() => {
+    db.collection("users").doc(req.query.username).collection("events").doc(req.query.eventName).set({
+      event: req.query.eventName
+    }).then(() => res.send(true)).catch(() => res.send(false));
+  })
+});
+
+app.get('/addComment', function (req, res) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  db.collection("events").doc(req.query.eventName).collection("comments").doc(md5(req.query.comment)).set({
+    username: req.query.username,
+    comment: req.query.comment
+}).then(() => res.send(true)).catch(() => res.send(false));  
+});
 
 app.get('/event', function (req, res) {
-  user = req.query.username;
-
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  readData('events', req.query.eventName, (req, res, data) => {
+    if (!data) {
+      res.send(false);
+      return;
+    }
+    res.send(data);
+  }, req, res);
 });
 
 app.listen(port, function () { }); //starts the server, alternatively you can use app.listen(port)
