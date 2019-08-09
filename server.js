@@ -1,6 +1,7 @@
 var port = process.env.PORT || 4000; //sets local server port to 4000
 var express = require('express'); // Express web server framework
 var md5 = require('md5');
+const levenshtein = require('js-levenshtein');
 
 const admin = require('firebase-admin');
 let serviceAccount = require('./credentials.json');
@@ -13,29 +14,18 @@ var app = express();
 console.log("Starting up server...");
 
 /*
-//Ping server every 10mins to prevent Heroku from idling
-var https = require("https");
-setInterval(function() {
-    https.get("https://nps-kiosk-server.herokuapp.com/status");
-	console.log("Ping!");
-}, 600000);
-*/
-
-/*
   Collection: Collection of Key/Value pairs 
   Document: Key - How you will access this data later. Usually username
   Data: Value - JSON object of data you want to store
 */
-function writeData(collection, document, data, db) {
+function writeData(collection, document, data) {
   try {
     db.collection(collection).doc(document).set(data);
     return 0;
-  } catch {
+  } catch(err) {
     return -1;
   }
 }
-
-
 
 /*
   Collection: Collection of Key/Value pairs
@@ -113,6 +103,7 @@ function _createEvent(req, res, name) {
     capacity: Number(req.query.capacity),
     numPeople: Number(req.query.numPeople),
   }
+  console.log("Here");
   success = writeData("events", req.query.name, data);
   res.send(success === 0);
   return 0;
@@ -149,6 +140,36 @@ app.get('/event', function (req, res) {
     }
     res.send(data);
   }, req, res);
+});
+
+app.get('/sprints', function (req, res) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  db.collection('events').get().then(col => {
+    var events = col.docs.map(doc => doc.data());
+    // Recommendation algorithm here
+    res.send(events);
+  })
+});
+
+app.get('/eventAutoCorrect', function (req, res) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  db.collection('events').get().then(col => {
+    var events = col.docs.map(doc => doc.data());
+    var findDist = event => levenshtein(event.name || '', req.query.query); // Min editing distance.
+    events = events.filter(event => {
+      return findDist(event) < 4 
+    });
+    if (events.length === 0) {
+      res.send(false);
+    } else {
+      var bestMatches = events.map(event => event.name).sort((event) => levenshtein(event.name || '', req.query.query));
+      res.send({
+        results: bestMatches.slice(0, 5) // Return top 5 results
+      });
+    }
+  })
 });
 
 app.listen(port, function () { }); //starts the server, alternatively you can use app.listen(port)
