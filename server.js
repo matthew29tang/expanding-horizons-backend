@@ -1,6 +1,4 @@
-var port = process.env.PORT || 4000; //sets local server port to 4000
-// https://c1hack.localtunnel.me
-// lt --port 4000 --subdomain c1hack
+var port = process.env.PORT || 4000; //sets local server port to 4000. 
 var express = require('express'); // Express web server framework
 var md5 = require('md5');
 const levenshtein = require('js-levenshtein');
@@ -38,7 +36,6 @@ function readData(collection, document, cb, req, res) {
   db.collection(collection).doc(document).get().then((doc) =>
     cb(req, res, doc.data())
   ).catch(err => {
-    console.log("uh oh" + err)
     cb(req, res, undefined)
   });
 }
@@ -76,7 +73,6 @@ app.get('/register', function (req, res) {
   readData('users', username, _registerUser, req, res);
 });
 
-// registers users (async)
 function _registerUser(req, res, username) {
   if (username) {
     res.send(false);
@@ -102,7 +98,6 @@ app.get('/addEvent', function (req, res) {
   readData('events', req.query.name, _createEvent, req, res);
 });
 
-// registers users (async)
 function _createEvent(req, res, name) {
   if (name) {
     res.send(false);
@@ -119,7 +114,6 @@ function _createEvent(req, res, name) {
     capacity: Number(req.query.capacity),
     numPeople: Number(req.query.numPeople),
   }
-  console.log("Here");
   success = writeData("events", req.query.name, data);
   res.send(success === 0);
   return 0;
@@ -163,17 +157,16 @@ Event Size: 0 1 2
 Money Required: 0 1 2
 Event Type: Marathon Fundraisers/Food Banks/Clothing Drives/Blood Donation
 */
-
 app.get('/sprints', function (req, res) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   db.collection('events').get().then(col => {
     var events = col.docs.map(doc => doc.data());
-    recommend(req, res, events);
+    _recommend(req, res, events);
   })
 });
 
-function recommend(req, res, events) {
+function _recommend(req, res, events) {
   const username = req.query.username;
   readData('users', username, (req, res, data) => {
     const size = data.size;
@@ -196,6 +189,16 @@ function recommend(req, res, events) {
     }
     events.sort((a,b) => calculate(a) - calculate(b));
     //console.log(events.map(calculate));
+    events = events.map(event => {
+      return {
+        name: event.name,
+        date: event.date,
+        money: event.money,
+        capacity: event.capacity,
+        type: event.type,
+      }
+
+    })
     res.send(events);
   }, req, res);
   
@@ -208,7 +211,7 @@ app.get('/eventAutoCorrect', function (req, res) {
     var events = col.docs.map(doc => doc.data());
     var findDist = event => levenshtein(event.name || '', req.query.query); // Min editing distance.
     events = events.filter(event => {
-      return findDist(event) < 4
+      return findDist(event) <= 5
     });
     if (events.length === 0) {
       res.send(false);
@@ -221,4 +224,4 @@ app.get('/eventAutoCorrect', function (req, res) {
   })
 });
 
-app.listen(port, function () { }); //starts the server, alternatively you can use app.listen(port)
+app.listen(port, function () { }); //starts the server
