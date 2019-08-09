@@ -85,6 +85,7 @@ function _registerUser(req, res, username) {
   data = {
     username: req.query.username,
     password: req.query.password,
+    name: req.query.name,
     event_type: req.query.event_type,
     money_req: Number(req.query.money_req),
     event_size: Number(req.query.event_size),
@@ -168,10 +169,37 @@ app.get('/sprints', function (req, res) {
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   db.collection('events').get().then(col => {
     var events = col.docs.map(doc => doc.data());
-    // Recommendation algorithm here
-    res.send(events);
+    recommend(req, res, events);
   })
 });
+
+function recommend(req, res, events) {
+  const username = req.query.username;
+  readData('users', username, (req, res, data) => {
+    const size = data.size;
+    const money = data.money_req;
+    const type = data.event_type;
+    var checkEventType = (type, event_type) => {
+      for (var i = 0; i < type.length; i++){
+        if (event_type[i] > type[i]) {
+          return false
+        }
+      }
+      return true
+    }
+    var calculate = event => {
+      const event_money = event.money <= 10 ? 0 : (event.money <= 30 ? 1 : 2)
+      const event_size = event.capacity <= 15 ? 0 : (event.capacity <= 50 ? 1 : 2)
+      return Math.abs(size - event_size) * 1.0 +
+      Math.abs(money - event_money) * 1.1 +
+      (checkEventType(type, data.event_type) ? 0 : 1) * 1.2
+    }
+    events.sort((a,b) => calculate(a) - calculate(b));
+    //console.log(events.map(calculate));
+    res.send(events);
+  }, req, res);
+  
+}
 
 app.get('/eventAutoCorrect', function (req, res) {
   res.header("Access-Control-Allow-Origin", "*");
