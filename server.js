@@ -189,6 +189,7 @@ function _recommend(req, res, events) {
     }
     events.sort((a,b) => calculate(a) - calculate(b));
     //console.log(events.map(calculate));
+    /*
     events = events.map(event => {
       return {
         name: event.name,
@@ -198,7 +199,7 @@ function _recommend(req, res, events) {
         type: event.type,
       }
 
-    })
+    })*/
     res.send(events);
   }, req, res);
   
