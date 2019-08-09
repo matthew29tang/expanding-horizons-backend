@@ -1,4 +1,6 @@
 var port = process.env.PORT || 4000; //sets local server port to 4000
+// https://c1hack.localtunnel.me
+// lt --port 4000 --subdomain c1hack
 var express = require('express'); // Express web server framework
 var md5 = require('md5');
 const levenshtein = require('js-levenshtein');
@@ -22,7 +24,7 @@ function writeData(collection, document, data) {
   try {
     db.collection(collection).doc(document).set(data);
     return 0;
-  } catch(err) {
+  } catch (err) {
     return -1;
   }
 }
@@ -46,13 +48,26 @@ app.get('/login', function (req, res) {
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   const username = req.query.username;
   readData('users', username, (req, res, data) => {
-    if (req.query.password === data.password) {
-      res.send(true);
+    if (!data) {
+      res.send({status: false});
+    } else if (req.query.password === data.password) {
+      getLoginData(req, res, data);
     } else {
-      res.send(false);
+      res.send({ status: false });
     }
   }, req, res);
 });
+
+function getLoginData(req, res, data) {
+  db.collection('users').doc(req.query.username).collection('events').get().then((col) => {
+    res.send({
+      status: true,
+      username: req.query.username,
+      name: data.name,
+      events: col.docs.map(doc => doc._fieldsProto.event.stringValue)
+    })
+  });
+}
 
 app.get('/register', function (req, res) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -113,7 +128,7 @@ app.get('/joinEvent', function (req, res) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   db.collection("events").doc(req.query.eventName).collection("people").doc(req.query.username).set({
-      username: req.query.username
+    username: req.query.username
   }).then(() => {
     db.collection("users").doc(req.query.username).collection("events").doc(req.query.eventName).set({
       event: req.query.eventName
@@ -127,7 +142,7 @@ app.get('/addComment', function (req, res) {
   db.collection("events").doc(req.query.eventName).collection("comments").doc(md5(req.query.comment)).set({
     username: req.query.username,
     comment: req.query.comment
-}).then(() => res.send(true)).catch(() => res.send(false));  
+  }).then(() => res.send(true)).catch(() => res.send(false));
 });
 
 app.get('/event', function (req, res) {
@@ -141,6 +156,12 @@ app.get('/event', function (req, res) {
     res.send(data);
   }, req, res);
 });
+
+/*
+Event Size: 0 1 2
+Money Required: 0 1 2
+Event Type: Marathon Fundraisers/Food Banks/Clothing Drives/Blood Donation
+*/
 
 app.get('/sprints', function (req, res) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -159,7 +180,7 @@ app.get('/eventAutoCorrect', function (req, res) {
     var events = col.docs.map(doc => doc.data());
     var findDist = event => levenshtein(event.name || '', req.query.query); // Min editing distance.
     events = events.filter(event => {
-      return findDist(event) < 4 
+      return findDist(event) < 4
     });
     if (events.length === 0) {
       res.send(false);

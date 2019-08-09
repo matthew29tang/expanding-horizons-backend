@@ -22,5 +22,8 @@
     "firebase-admin": "^8.3.0",
     "js-levenshtein": "^1.1.6",
     "md5": "^2.2.1"
+  },
+  "engine": {
+    "node": "^10.10.0"
   }
 }
