@@ -7,7 +7,7 @@ This project was created for the Capital One SES August Hackathon.
 * Extra funds yield a profit for the company or can be donated to charity otherwise.
 
 ## Features
-* Frontend: iOS Swift (Darrel, Jacobia, Dylan, Sam) - `https://github.com/samblum17/Help_People`
+* Frontend: iOS Swift (Darrel, Jacobia, Dylan, Sam) - https://github.com/samblum17/Help_People
 * Backend: Node.js express server (Matthew) - `https://c1hack.localtunnel.me`
   * Deployment: AWS EC2 Instance (see below for more details)
   * Database: Firebase Cloud Firestore
