@@ -41,11 +41,14 @@ This project was created for the Capital One SES August Hackathon.
 The backend server is running on AWS ec2 server instance.
 The node.js server uses express
 
-1) scp -i ./c1-hackathon.pem .\hackathon-backend.zip  ubuntu@ec2-3-85-56-89.compute-1.amazonaws.com:~
+1) ssh -L 8888:localhost:8888 -i ./c1-hackathon.pem ubuntu@ec2-3-85-56-89.compute-1.amazonaws.com
 2) node server.js &
 3) lt --port 4000 --subdomain c1hack
 
+To transfer files, use `scp -i ./c1-hackathon.pem .\hackathon-backend.zip  ubuntu@ec2-3-85-56-89.compute-1.amazonaws.com:~` from a terminal in the host system.
+
 Public URL provided by localtunnel (lt): https://c1hack.localtunnel.me
+
 Note that node must be running on >=10.10.0. AWS ec2 server does not upgrade you to that so you must use node version manager (nvm)
 
 ---
