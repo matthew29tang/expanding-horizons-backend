@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/matthew29tang/helpingpeople-backend#readme",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "firebase-admin": "^8.3.0",
     "js-levenshtein": "^1.1.6",
     "md5": "^2.2.1"
